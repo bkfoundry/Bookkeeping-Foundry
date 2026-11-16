@@ -552,6 +552,55 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
 .service-chip { font: inherit; font-size: 13px; color: inherit; text-align: left; }
 @media(max-width: 800px) { .locked-grid { grid-template-columns: 1fr; } .scope-grid { grid-template-columns: 1fr; } }
 
+/* Tool menu and shared tool styles */
+.locked-card .tier { display: inline-block; margin-top: 14px; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--olive); background: var(--light-sage); padding: 4px 8px; border-radius: 4px; }
+.locked-card .tier.growth { background: #f3ead2; color: #7a5f22; }
+.locked-card .unlock { margin-top: 14px; font-size: 12px; font-weight: 700; color: var(--olive); text-decoration: none; display: inline-block; }
+.tool-menu { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 45px; }
+.tool-menu button { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 9px 15px; font: inherit; font-size: 13px; cursor: pointer; color: var(--ink); }
+.tool-menu button.active { background: var(--olive); border-color: var(--olive); color: #fff; font-weight: 600; }
+.tool-menu button.locked { color: #8b9184; border-style: dashed; }
+.tool-menu button.locked::before { content: '🔒 '; }
+#toolPanels > div { margin-top: 24px; }
+#toolPanels > div[hidden] { display: none !important; }
+.tool-locked-panel { text-align: center; }
+.tool-locked-panel p { color: var(--muted); }
+.ft-title { font-family: Georgia, serif; font-size: 28px; margin: 10px 0; font-weight: 500; }
+.ft-intro { color: var(--muted); font-size: 14px; line-height: 1.7; }
+.ft-form { display: grid; gap: 14px; align-content: start; }
+.ft-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ft-row-4 { grid-template-columns: 2fr 1.3fr 1fr auto; align-items: end; }
+.ft-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 700; color: var(--ink); }
+.ft-field small { font-weight: 400; color: var(--muted); font-size: 11px; }
+.ft-field input, .ft-field select, .ft-field textarea, .ft-details textarea, .ft-table input { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: #fff; font: inherit; font-size: 13px; font-weight: 400; color: var(--ink); box-sizing: border-box; }
+.ft-check { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 400; color: var(--ink); cursor: pointer; }
+.ft-check input { width: auto; accent-color: var(--olive); }
+.ft-label { font-size: 12px; color: var(--sage); margin-top: 12px; }
+.ft-gold { font-size: 24px; font-family: Georgia, serif; color: var(--gold); margin-bottom: 12px; }
+.ft-pre { white-space: pre-wrap; font-family: inherit; font-size: 12px; line-height: 1.7; color: #e6ebe1; margin: 12px 0 18px; max-height: 320px; overflow: auto; }
+.ft-tall { max-height: 460px; }
+.ft-status { font-size: 12px; color: var(--sage); margin: 10px 0 0; min-height: 1em; }
+.ft-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.ft-tab { border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 8px 12px; font: inherit; font-size: 12px; cursor: pointer; }
+.ft-tab.active { background: var(--olive); color: #fff; border-color: var(--olive); }
+.ft-table-wrap { overflow-x: auto; margin-top: 20px; }
+.ft-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; }
+.ft-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); padding: 10px; border-bottom: 1px solid var(--line); }
+.ft-table td { padding: 8px 10px; border-bottom: 1px solid #eeeae0; vertical-align: middle; }
+.ft-table input { padding: 7px; min-width: 80px; }
+.ft-empty { color: var(--muted); text-align: center; padding: 20px !important; }
+.ft-pill { display: inline-block; padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.ft-ok { background: #e7efe1; color: #3f5a33; }
+.ft-warn { background: #f6edd6; color: #7a5f22; }
+.ft-bad { background: #f7e1d9; color: #8a3a22; }
+.ft-x { border: 0; background: transparent; font-size: 18px; cursor: pointer; color: #8b9184; }
+.ft-note { font-size: 12px; color: var(--muted); line-height: 1.7; margin-top: 16px; }
+.ft-details { border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; background: #fff; }
+.ft-details summary { cursor: pointer; font-size: 13px; font-weight: 700; }
+.ft-meter { height: 8px; background: rgba(255,255,255,.15); border-radius: 999px; overflow: hidden; margin: 14px 0 4px; }
+.ft-meter > div { height: 100%; border-radius: 999px; transition: width .2s; }
+@media(max-width: 800px) { .ft-row, .ft-row-4 { grid-template-columns: 1fr; } }
+
 .member-area { max-width: 850px; margin: 45px auto; padding: 45px 7%; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; }
 
 @media(max-width: 1100px) {
@@ -833,35 +882,19 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
     <div class="section-head">
       <span class="eyebrow">PRACTICAL MEMBER TOOLS</span>
       <h2>Master pricing & <em>client acquisition.</em></h2>
-      <p>Solve the two biggest hurdles when starting out: pricing your work and finding clients. Included with Foundry Membership and Growth.</p>
+      <p>Eleven tools for pricing, proposals, onboarding and finding clients. Eight are included with Foundry Membership, and Growth adds three more.</p>
     </div>
 
-    <div class="locked-grid" id="lockedTools">
-      <article class="locked-card">
-        <div class="lock-icon" aria-hidden="true">🔒</div>
-        <span class="eyebrow">TOOL 01</span>
-        <h3>Client Pricing Calculator</h3>
-        <p>Turn a client's services, transaction volume and backlog into a flat monthly retainer and cleanup fee.</p>
-      </article>
-      <article class="locked-card">
-        <div class="lock-icon" aria-hidden="true">🔒</div>
-        <span class="eyebrow">TOOL 02</span>
-        <h3>Proposal Generator</h3>
-        <p>Build a ready-to-send client proposal from your quote, then copy it into an email or document.</p>
-      </article>
-      <article class="locked-card">
-        <div class="lock-icon" aria-hidden="true">🔒</div>
-        <span class="eyebrow">TOOL 03</span>
-        <h3>Client Acquisition Hub</h3>
-        <p>Proven ways to find your first and next clients, from CPA referral partners to niche marketing.</p>
-      </article>
-    </div>
+    <div class="locked-grid" id="lockedTools"></div>
     <div class="locked-cta">
       <p id="lockedMessage">Members get full access to these tools.</p>
       <a id="lockedButton" class="button" href="#pricing">View Membership Plans</a>
     </div>
 
-    <div id="premiumTools" hidden></div>
+    <div id="premiumTools" hidden>
+      <div class="tool-menu" id="toolMenu" role="tablist" aria-label="Member tools"></div>
+      <div id="toolPanels"></div>
+    </div>
   </section>
 
   <!-- FAQ Section -->
@@ -998,6 +1031,7 @@ let supabaseClient=null;
 try {
   if(window.supabase?.createClient) {
     supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+    window.FoundrySupabase=supabaseClient;
   }
 } catch(e) { console.error('Auth Init Error', e); }
 
@@ -1027,23 +1061,63 @@ function closeAuth() {
   authMessage.hidden=true;
 }
 
-// Member-only tools. The tools are not in this file: Supabase sends them
-// only to logged-in members with an active Membership or Growth plan.
+// Member-only tools. The tools themselves are not in this file: Supabase sends
+// each one only to logged-in members whose active plan includes it.
 const PLAN_RANK = {workspace: 0, alumni: 0, membership: 1, growth: 2};
+const TOOL_CATALOG = [
+  ['pricing-calculator', 'Client Pricing Calculator', 'Turn services, transaction volume and backlog into a flat monthly retainer and cleanup fee.', 'membership'],
+  ['proposal-generator', 'Proposal Generator', 'Build a ready-to-send client proposal from your quote.', 'membership'],
+  ['cleanup-estimator', 'Cleanup Scope Estimator', 'Estimate cleanup hours, a fee range and a written scope of work.', 'membership'],
+  ['engagement-letter', 'Engagement Letter Builder', 'Turn your quote into an engagement letter with scope, exclusions and payment terms.', 'membership'],
+  ['onboarding-kit', 'Client Onboarding Kit', 'Document requests, an access checklist and a welcome email, tailored to each client.', 'membership'],
+  ['profitability-checker', 'Client Profitability Checker', 'See your real hourly rate per client, spot scope creep and know who needs a price increase.', 'membership'],
+  ['diagnostic-report', 'Diagnostic Review Report', 'A scored, one-page books health check you hand to a prospect.', 'membership'],
+  ['acquisition-hub', 'Client Acquisition Hub', 'Proven ways to find your first and next clients.', 'membership'],
+  ['nexus-checker', 'Sales Tax Nexus Checker', 'See where an online seller may have crossed economic nexus thresholds.', 'growth'],
+  ['capacity-planner', 'Capacity & Hiring Planner', 'Know how many clients you can handle and when a subcontractor pays off.', 'growth'],
+  ['outreach-writer', 'AI Outreach Writer', 'Personalized emails and LinkedIn messages for CPAs, prospects and referrals.', 'growth']
+];
 const premiumTools = document.querySelector('#premiumTools');
 const lockedTools = document.querySelector('#lockedTools');
 const lockedMessage = document.querySelector('#lockedMessage');
 const lockedButton = document.querySelector('#lockedButton');
+const toolMenu = document.querySelector('#toolMenu');
+const toolPanels = document.querySelector('#toolPanels');
 let premiumRequest = 0;
 
+function buildLockedCards() {
+  lockedTools.replaceChildren();
+  TOOL_CATALOG.forEach(([id, title, desc, plan]) => {
+    const card = document.createElement('article'); card.className = 'locked-card';
+    const icon = document.createElement('div'); icon.className = 'lock-icon'; icon.setAttribute('aria-hidden', 'true'); icon.textContent = '🔒';
+    const h = document.createElement('h3'); h.textContent = title;
+    const p = document.createElement('p'); p.textContent = desc;
+    const tier = document.createElement('span'); tier.className = 'tier' + (plan === 'growth' ? ' growth' : '');
+    tier.textContent = plan === 'growth' ? 'Growth' : 'Membership & Growth';
+    card.append(icon, h, p, tier);
+    lockedTools.appendChild(card);
+  });
+}
+buildLockedCards();
+
 function showLocked(message, buttonText) {
-  premiumTools.replaceChildren();
+  toolMenu.replaceChildren(); toolPanels.replaceChildren();
   premiumTools.hidden = true;
   lockedTools.hidden = false;
   lockedButton.hidden = false;
   lockedMessage.textContent = message;
   lockedButton.textContent = buttonText;
 }
+
+window.FoundryShowTool = function (id) {
+  toolMenu.querySelectorAll('button').forEach(b => {
+    const on = b.dataset.tool === id;
+    b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  toolPanels.querySelectorAll(':scope > div').forEach(p => { p.hidden = p.dataset.premium !== id; });
+  const panel = toolPanels.querySelector('[data-premium="' + id + '"]');
+  if (panel) premiumTools.scrollIntoView({behavior: 'smooth', block: 'start'});
+};
 
 async function renderPremium(membership) {
   const requestId = ++premiumRequest;
@@ -1075,23 +1149,43 @@ async function renderPremium(membership) {
       showLocked('We couldn\'t load your tools. Please refresh, or email hello@bkfoundry.com.', 'View Membership Plans');
       return;
     }
-    premiumTools.replaceChildren();
-    for (const item of data) {
-      const box = document.createElement('div');
-      box.className = item.id === 'acquisition-hub' ? 'lead-hub' : 'scope-tool';
-      box.dataset.premium = item.id;
-      box.innerHTML = item.html;
-      premiumTools.appendChild(box);
-    }
+    const byId = new Map(data.map(item => [item.id, item]));
+    toolMenu.replaceChildren(); toolPanels.replaceChildren();
+    TOOL_CATALOG.forEach(([id, title, desc, plan]) => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.dataset.tool = id; btn.setAttribute('role', 'tab'); btn.textContent = title;
+      btn.addEventListener('click', () => window.FoundryShowTool(id));
+      const panel = document.createElement('div'); panel.dataset.premium = id; panel.hidden = true;
+      const item = byId.get(id);
+      if (item) {
+        panel.className = id === 'acquisition-hub' ? 'lead-hub' : 'scope-tool';
+        panel.innerHTML = item.html;
+      } else {
+        btn.classList.add('locked');
+        panel.className = 'scope-tool tool-locked-panel';
+        const h = document.createElement('h3'); h.className = 'ft-title'; h.textContent = title;
+        const p = document.createElement('p'); p.textContent = desc + ' This tool is included with the Growth plan.';
+        const a = document.createElement('a'); a.className = 'button'; a.href = '#pricing'; a.textContent = 'Upgrade to Growth';
+        panel.append(h, p, a);
+      }
+      toolMenu.appendChild(btn); toolPanels.appendChild(panel);
+    });
     lockedTools.hidden = true;
     premiumTools.hidden = false;
     lockedMessage.textContent = '';
     for (const item of data) {
       if (!item.script) continue;
-      const root = premiumTools.querySelector('[data-premium="' + item.id + '"]');
+      const root = toolPanels.querySelector('[data-premium="' + item.id + '"]');
+      if (!root) continue;
       try { new Function('root', item.script)(root); }
       catch (err) { console.error('Tool failed to start:', item.id, err); }
     }
+    const first = TOOL_CATALOG.find(t => byId.has(t[0]));
+    toolMenu.querySelectorAll('button').forEach(b => {
+      const on = first && b.dataset.tool === first[0];
+      b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    toolPanels.querySelectorAll(':scope > div').forEach(p => { p.hidden = !(first && p.dataset.premium === first[0]); });
   } catch (error) {
     if (requestId !== premiumRequest) return;
     console.error('Member tools failed to load:', error);
