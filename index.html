@@ -706,6 +706,23 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
 .desk.just-saved { animation: deskPulse 1.2s ease 2; }
 @keyframes deskPulse { 0%,100% { box-shadow: inset 0 0 0 1px var(--olive); } 50% { box-shadow: 0 0 0 6px rgba(57,74,49,.25); } }
 
+
+/* Floor plan (SVG) */
+.office-floor { grid-template-columns: 1fr; }
+.office-main { padding: 14px; background: #ece9df; background-image: none; }
+.office-plan-wrap { overflow-x: auto; }
+.office-plan { min-width: 760px; }
+.office-plan svg { display: block; width: 100%; height: auto; font-family: inherit; }
+.office-side { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.office-side .office-legend { grid-column: 1 / -1; }
+.plan-seat, .plan-room { cursor: pointer; outline: none; }
+.plan-seat.empty { cursor: default; }
+.plan-seat .hl, .plan-room .hl { fill: none; stroke: transparent; stroke-width: 3; transition: stroke .15s; }
+.plan-seat:not(.empty):hover .hl, .plan-seat:not(.empty):focus-visible .hl, .plan-room:hover .hl, .plan-room:focus-visible .hl { stroke: #c9a86e; }
+.plan-seat.just-saved .hl { stroke: #394a31; animation: planPulse 1s ease 3; }
+@keyframes planPulse { 50% { stroke-opacity: .2; } }
+@media(max-width: 1000px) { .office-side { grid-template-columns: 1fr 1fr; } }
+
 .member-area { max-width: 850px; margin: 45px auto; padding: 45px 7%; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; }
 
 @media(max-width: 1100px) {
@@ -1021,15 +1038,7 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
 
     <div id="officeFloor" class="office-floor" hidden>
       <div class="office-main">
-        <div class="office-zone">
-          <div class="zone-label">PRIVATE OFFICES · GROWTH</div>
-          <div class="office-rooms" id="officeRooms"></div>
-        </div>
-        <div class="office-hall" aria-hidden="true">🪴 <span style="font-size:11px;letter-spacing:2px;color:#8b9184;font-weight:700;">HALLWAY</span> 🪴</div>
-        <div class="office-zone">
-          <div class="zone-label">CUBICLES</div>
-          <div class="office-desks" id="officeDesks"></div>
-        </div>
+        <div class="office-plan-wrap"><div id="officePlan" class="office-plan" aria-label="Foundry Office floor plan"></div></div>
       </div>
       <aside class="office-side">
         <button type="button" class="office-spot watercooler" id="watercoolerSpot">
@@ -1387,7 +1396,6 @@ const OFFICE_PLANS = ['workspace', 'membership', 'growth', 'alumni'];
 const officeEls = {
   teaser: document.querySelector('#officeTeaser'), teaserText: document.querySelector('#officeTeaserText'),
   teaserButton: document.querySelector('#officeTeaserButton'), floor: document.querySelector('#officeFloor'),
-  rooms: document.querySelector('#officeRooms'), desks: document.querySelector('#officeDesks'),
   wc: document.querySelector('#watercoolerSpot'), wcBadge: document.querySelector('#watercoolerBadge'),
   lounge: document.querySelector('#loungeSpot'), loungeText: document.querySelector('#loungeText'),
   meeting: document.querySelector('#meetingSpot'), meetingText: document.querySelector('#meetingText'),
@@ -1412,7 +1420,7 @@ function leaveOffice(message, buttonText) {
   if (office.channel && supabaseClient) { supabaseClient.removeChannel(office.channel); office.channel = null; }
   office.people.clear(); office.seen.clear(); office.unread.clear(); office.wcUnread = 0; office.open = null; office.me = null;
   officeEls.panel.hidden = true; officeEls.floor.hidden = true; officeEls.teaser.hidden = false;
-  officeEls.rooms.replaceChildren(); officeEls.desks.replaceChildren(); officeEls.thread.replaceChildren();
+  document.querySelector('#officePlan').replaceChildren(); officeEls.thread.replaceChildren();
   officeEls.teaserText.textContent = message; officeEls.teaserButton.textContent = buttonText;
 }
 
@@ -1443,6 +1451,8 @@ async function loadOfficeSettings() {
 }
 function setSpot(el, textEl, url, label) {
   const safe = /^https:\/\/([a-z0-9-]+\.)*zoom\.us\//i.test(url || '');
+  if (el === officeEls.lounge) officeLinks.lounge = safe ? url : null;
+  if (el === officeEls.meeting) officeLinks.meeting = safe ? url : null;
   if (safe) { el.href = url; el.classList.remove('disabled'); textEl.textContent = label; }
   else { el.removeAttribute('href'); el.classList.add('disabled'); textEl.textContent = 'Opening soon'; }
 }
@@ -1469,48 +1479,250 @@ function presenceLine(p) {
   return [p.online ? 'In the office now' : 'Away', p.headline, p.status_text].filter(Boolean).join(' · ');
 }
 
-function deskButton(p, kind, no, pos) {
-  const b = document.createElement('button'); b.type = 'button';
-  b.className = 'seat ' + (kind === 'office' ? 'room' : 'cube ' + pos);
-  const label = (kind === 'office' ? 'Office ' : 'Cubicle ') + no;
-  const top = document.createElement('span'); top.className = 'worktop';
-  const mon = document.createElement('span'); mon.className = 'monitor';
-  const chair = document.createElement('span'); chair.className = 'chair';
-  const plate = document.createElement('span'); plate.className = 'plate';
-  b.append(top, mon, chair, plate);
-  if (kind === 'office') { const plant = document.createElement('span'); plant.className = 'plant'; plant.textContent = '🪴'; plant.setAttribute('aria-hidden', 'true'); b.appendChild(plant); }
-  if (!p) {
-    b.classList.add('empty'); b.disabled = true;
-    plate.textContent = 'Open'; const n = document.createElement('small'); n.textContent = '#' + no; plate.appendChild(n);
-    b.setAttribute('aria-label', label + ', open');
-    return b;
+const SVGNS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent) {
+  const n = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function txt(parent, x, y, str, attrs) {
+  const t = el('text', Object.assign({x, y, 'text-anchor': 'middle'}, attrs || {}), parent);
+  t.textContent = str; return t;
+}
+function clip(str, n) { str = String(str || ''); return str.length > n ? str.slice(0, n - 1) + '…' : str; }
+function makeClickable(g, label, onClick) {
+  g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button'); g.setAttribute('aria-label', label);
+  g.addEventListener('click', onClick);
+  g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } });
+}
+function plant(g, x, y, r) {
+  el('circle', {cx: x, cy: y, r: r, fill: '#5f8a4c'}, g);
+  el('circle', {cx: x - r * .35, cy: y - r * .3, r: r * .55, fill: '#79a862'}, g);
+  el('circle', {cx: x + r * .4, cy: y + r * .2, r: r * .45, fill: '#4c7a3b'}, g);
+}
+function chairAndPerson(g, x, y, p, big) {
+  const r = big ? 15 : 12;
+  el('circle', {cx: x, cy: y, r: r, fill: p ? '#7e8577' : '#b8bcaf'}, g);
+  if (!p) return;
+  el('circle', {cx: x, cy: y, r: r - 1, fill: p.is_me ? '#e4ecd9' : '#f1efe4', stroke: '#fff', 'stroke-width': 2}, g);
+  txt(g, x, y + 4, initials(p.display_name), {'font-size': big ? 11 : 9.5, 'font-weight': 800, fill: '#394a31'});
+  el('circle', {cx: x + r * .72, cy: y + r * .72, r: 4.5, fill: p.online ? '#5d9b4e' : '#c4c8bd', stroke: '#fff', 'stroke-width': 1.6}, g);
+}
+function deskTop(g, x, y, w, h, online) {
+  el('rect', {x, y, width: w, height: h, rx: 2.5, fill: '#cfa874', stroke: '#b38c58', 'stroke-width': 1}, g);
+  el('rect', {x: x + w / 2 - 13, y: y + h / 2 - 3, width: 26, height: 6, rx: 1.5, fill: online ? '#a7d0e4' : '#3d4237'}, g);
+}
+function unreadDot(g, x, y) { el('circle', {cx: x, cy: y, r: 6, fill: '#c46a4a', stroke: '#fff', 'stroke-width': 2}, g); }
+
+function seatGroup(svg, p, label) {
+  const g = el('g', {class: 'plan-seat' + (p ? '' : ' empty') + (p && p.is_me ? ' me' : '')}, svg);
+  if (p) {
+    const t = el('title', {}, g);
+    t.textContent = p.display_name + (p.headline ? ' · ' + p.headline : '') + (p.status_text ? '\n' + p.status_text : '') + '\n' + label + ' · ' + (p.online ? 'In the office' : 'Away');
+    makeClickable(g, (p.is_me ? 'Your ' + label.toLowerCase() : p.display_name + ', ' + label) + ', ' + (p.online ? 'in the office' : 'away'), () => p.is_me ? openProfile(false) : openDM(p.user_id));
+  } else g.setAttribute('aria-label', label + ', open');
+  return g;
+}
+
+// A private office. side = 'top' | 'bottom' | 'left' tells which wall the door faces away from.
+function drawRoom(svg, x, y, w, h, no, p, doorSide) {
+  const g = seatGroup(svg, p, 'Office ' + no);
+  el('rect', {x, y, width: w, height: h, fill: 'url(#carpet)'}, g);
+  const cx = x + w / 2;
+  const back = doorSide === 'bottom' ? 'top' : doorSide === 'top' ? 'bottom' : 'top';
+  const deskY = back === 'top' ? y + 22 : y + h - 22 - 26;
+  const chairY = back === 'top' ? deskY + 50 : deskY - 24;
+  deskTop(g, cx - 52, deskY, 104, 26, p && p.online);
+  el('rect', {x: cx - 52 + 108, y: deskY, width: 22, height: 26, rx: 2, fill: '#d8bb8b', stroke: '#b38c58', 'stroke-width': 1}, g);
+  chairAndPerson(g, cx, chairY, p, true);
+  plant(g, x + 20, back === 'top' ? y + h - 24 : y + 24, 11);
+  const plateY = back === 'top' ? y + h - 14 : y + 22;
+  el('rect', {x: cx - 42, y: plateY - 11, width: 84, height: 15, rx: 3, fill: '#fbfaf5', stroke: '#cfcbbd'}, g);
+  txt(g, cx, plateY, p ? (p.is_me ? 'You' : clip(p.display_name, 15)) : 'Office ' + no + ' · Open', {'font-size': 9.5, 'font-weight': p ? 700 : 600, fill: p ? '#2b3326' : '#9aa092'});
+  if (p && office.unread.has(p.user_id)) unreadDot(g, cx + 22, chairY - 16);
+  el('rect', {class: 'hl', x: x + 3, y: y + 3, width: w - 6, height: h - 6, rx: 4}, g);
+  return g;
+}
+
+function drawCubicle(svg, x, y, s, no, p, facing) {
+  const g = seatGroup(svg, p, 'Cubicle ' + no);
+  el('rect', {x, y, width: s, height: s, fill: p && p.is_me ? '#eef3e8' : '#f3f1e8'}, g);
+  const cx = x + s / 2;
+  const deskY = facing === 'down' ? y + s - 20 : y + 4;
+  deskTop(g, x + 6, deskY, s - 12, 16, p && p.online);
+  chairAndPerson(g, cx, facing === 'down' ? deskY - 16 : deskY + 32, p, false);
+  const ly = facing === 'down' ? y - 7 : y + s + 15;
+  txt(g, cx, ly, p ? (p.is_me ? 'You' : clip(p.display_name, 12)) : 'Open', {'font-size': 9.5, 'font-weight': p ? 700 : 500, fill: p ? '#2b3326' : '#a3a99c'});
+  if (p && office.unread.has(p.user_id)) unreadDot(g, x + s - 8, facing === 'down' ? y + 8 : y + s - 8);
+  el('rect', {class: 'hl', x: x + 2, y: y + 2, width: s - 4, height: s - 4, rx: 3}, g);
+}
+
+function door(svg, x, y, len, orient, swing) {
+  // gap in a wall plus a swing arc. orient 'h' = wall runs horizontally.
+  if (orient === 'h') {
+    el('line', {x1: x, y1: y, x2: x + len, y2: y, stroke: '#f6f3ea', 'stroke-width': 8}, svg);
+    el('path', {d: 'M' + x + ' ' + y + ' A' + len + ' ' + len + ' 0 0 ' + (swing > 0 ? 1 : 0) + ' ' + (x + len) + ' ' + (y + swing * len), fill: 'none', stroke: '#8b9184', 'stroke-width': 1, 'stroke-dasharray': '3 3'}, svg);
+    el('line', {x1: x, y1: y, x2: x, y2: y + swing * len, stroke: '#6b7262', 'stroke-width': 2}, svg);
+  } else {
+    el('line', {x1: x, y1: y, x2: x, y2: y + len, stroke: '#f6f3ea', 'stroke-width': 8}, svg);
+    el('line', {x1: x, y1: y, x2: x + swing * len, y2: y, stroke: '#6b7262', 'stroke-width': 2}, svg);
   }
-  if (p.online) b.classList.add('online');
-  if (p.is_me) b.classList.add('me');
-  const av = document.createElement('span'); av.className = 'avatar'; av.textContent = initials(p.display_name);
-  b.appendChild(av);
-  plate.textContent = p.is_me ? 'You' : p.display_name;
-  if (office.unread.has(p.user_id)) { const u = document.createElement('span'); u.className = 'unread'; b.appendChild(u); }
-  b.title = p.display_name + (p.headline ? ' · ' + p.headline : '') + (p.status_text ? '\n' + p.status_text : '') + '\n' + label;
-  b.setAttribute('aria-label', (p.is_me ? 'Your ' + label.toLowerCase() : p.display_name + ', ' + label) + ', ' + (p.online ? 'in the office' : 'away'));
-  b.addEventListener('click', () => p.is_me ? openProfile(false) : openDM(p.user_id));
-  return b;
+}
+
+function roomLabel(g, x, y, title, sub) {
+  txt(g, x, y, title, {'font-size': 13, 'font-family': 'Georgia, serif', fill: '#2b3326'});
+  if (sub) txt(g, x, y + 15, sub, {'font-size': 9.5, fill: '#6b7262'});
 }
 
 function drawFloor(list) {
   const rooms = new Map(), desks = new Map();
   list.forEach(p => (p.kind === 'office' ? rooms : desks).set(p.desk_no, p));
-  officeEls.rooms.replaceChildren();
-  for (let i = 1; i <= office.roomCount; i++) officeEls.rooms.appendChild(deskButton(rooms.get(i), 'office', i));
   const maxDesk = Math.max(0, ...desks.keys());
-  const total = Math.max(16, Math.ceil((maxDesk + 1) / 16) * 16);
-  officeEls.desks.replaceChildren();
-  for (let start = 1; start <= total; start += 4) {
-    const pod = document.createElement('div'); pod.className = 'pod';
-    for (let k = 0; k < 4; k++) pod.appendChild(deskButton(desks.get(start + k), 'desk', start + k, k < 2 ? 'top' : 'bottom'));
-    officeEls.desks.appendChild(pod);
+  const perRow = 12, rows = Math.max(2, Math.ceil((maxDesk + 1) / perRow));
+  const W = 1000, M = 16, band = 176, side = 196, S = 62, pod = S * 2, cols = 3;
+  const x0 = M + side, x1 = W - M - side, cw = x1 - x0;
+  const aisleX = (cw - cols * pod) / (cols + 1), aisleY = 56;
+  const centerH = rows * pod + (rows + 1) * aisleY;
+  const yTop = M + band, yBot = yTop + centerH, H = yBot + band + M;
+  const plan = document.querySelector('#officePlan');
+  plan.replaceChildren();
+  const svg = el('svg', {viewBox: '0 0 ' + W + ' ' + H, role: 'img'});
+  const defs = el('defs', {}, svg);
+  const pat = el('pattern', {id: 'carpet', width: 8, height: 8, patternUnits: 'userSpaceOnUse'}, defs);
+  el('rect', {width: 8, height: 8, fill: '#e3e1d7'}, pat); el('circle', {cx: 2, cy: 2, r: .8, fill: '#d6d3c7'}, pat);
+  const tile = el('pattern', {id: 'tile', width: 24, height: 24, patternUnits: 'userSpaceOnUse'}, defs);
+  el('rect', {width: 24, height: 24, fill: '#f6f3ea'}, tile); el('path', {d: 'M24 0H0V24', fill: 'none', stroke: '#ebe6d8', 'stroke-width': 1}, tile);
+  const ktile = el('pattern', {id: 'ktile', width: 14, height: 14, patternUnits: 'userSpaceOnUse'}, defs);
+  el('rect', {width: 14, height: 14, fill: '#eef2f0'}, ktile); el('path', {d: 'M14 0H0V14', fill: 'none', stroke: '#dbe3e0', 'stroke-width': 1}, ktile);
+
+  // floor
+  el('rect', {x: M, y: M, width: W - 2 * M, height: H - 2 * M, fill: 'url(#tile)'}, svg);
+
+  // top offices 1-5
+  const bw = (W - 2 * M) / 5;
+  for (let i = 0; i < 5; i++) drawRoom(svg, M + i * bw, M, bw, band, i + 1, rooms.get(i + 1), 'bottom');
+  // bottom offices 6,7,(lobby),8,9
+  const bottomSlots = [6, 7, null, 8, 9];
+  bottomSlots.forEach((no, i) => { if (no) drawRoom(svg, M + i * bw, yBot, bw, band, no, rooms.get(no), 'top'); });
+  // left column: lounge (top half) + office 10 (bottom half)
+  const half = centerH / 2;
+  drawRoom(svg, M, yTop + half, side, half, 10, rooms.get(10), 'right');
+
+  // lounge
+  const lounge = el('g', {class: 'plan-room'}, svg);
+  el('rect', {x: M, y: yTop, width: side, height: half, fill: '#efe9dc'}, lounge);
+  el('rect', {x: M + 26, y: yTop + 34, width: side - 52, height: half - 80, rx: 10, fill: '#e6d7bd'}, lounge);
+  el('rect', {x: M + 30, y: yTop + 20, width: side - 60, height: 22, rx: 8, fill: '#8fa08a'}, lounge);
+  el('rect', {x: M + 16, y: yTop + 48, width: 22, height: half - 110, rx: 8, fill: '#8fa08a'}, lounge);
+  el('rect', {x: M + side - 38, y: yTop + 48, width: 22, height: half - 110, rx: 8, fill: '#8fa08a'}, lounge);
+  el('rect', {x: M + side / 2 - 28, y: yTop + 62, width: 56, height: 30, rx: 5, fill: '#cfa874', stroke: '#b38c58'}, lounge);
+  plant(lounge, M + 18, yTop + half - 20, 11);
+  roomLabel(lounge, M + side / 2, yTop + half - 32, 'Coworking Lounge', officeLinks.lounge ? 'Tap to join on Zoom' : 'Opening soon');
+  el('rect', {class: 'hl', x: M + 3, y: yTop + 3, width: side - 6, height: half - 6, rx: 4}, lounge);
+  makeClickable(lounge, 'Coworking Lounge, join on Zoom', () => openLink(officeLinks.lounge));
+
+  // right column: meeting room (top) + kitchen / watercooler (bottom)
+  const rx = x1;
+  const meet = el('g', {class: 'plan-room'}, svg);
+  el('rect', {x: rx, y: yTop, width: side, height: half, fill: 'url(#carpet)'}, meet);
+  el('rect', {x: rx + side / 2 - 26, y: yTop + 34, width: 52, height: half - 92, rx: 6, fill: '#cfa874', stroke: '#b38c58'}, meet);
+  const seats = Math.max(2, Math.floor((half - 100) / 30));
+  for (let i = 0; i < seats; i++) {
+    const cy = yTop + 46 + i * ((half - 116) / Math.max(1, seats - 1));
+    el('circle', {cx: rx + side / 2 - 38, cy, r: 9, fill: '#9aa08f'}, meet);
+    el('circle', {cx: rx + side / 2 + 38, cy, r: 9, fill: '#9aa08f'}, meet);
   }
+  el('rect', {x: rx + side / 2 - 30, y: yTop + 10, width: 60, height: 5, rx: 2, fill: '#3d4237'}, meet);
+  roomLabel(meet, rx + side / 2, yTop + half - 32, 'Meeting Room', officeLinks.meeting ? 'Tap to join on Zoom' : 'Opening soon');
+  el('rect', {class: 'hl', x: rx + 3, y: yTop + 3, width: side - 6, height: half - 6, rx: 4}, meet);
+  makeClickable(meet, 'Meeting Room, join on Zoom', () => openLink(officeLinks.meeting));
+
+  const kit = el('g', {class: 'plan-room'}, svg);
+  const ky = yTop + half;
+  el('rect', {x: rx, y: ky, width: side, height: half, fill: 'url(#ktile)'}, kit);
+  el('rect', {x: rx + side - 34, y: ky + 10, width: 26, height: half - 20, rx: 2, fill: '#d9d4c5', stroke: '#c2bcab'}, kit);
+  el('circle', {cx: rx + side - 21, cy: ky + 40, r: 7, fill: '#c9d7dc', stroke: '#a9bcc2'}, kit);
+  el('rect', {x: rx + 14, y: ky + 14, width: 26, height: 26, rx: 4, fill: '#ffffff', stroke: '#a9bcc2'}, kit);
+  el('circle', {cx: rx + 27, cy: ky + 27, r: 9, fill: '#9fd0e8', stroke: '#6fb1cf'}, kit);
+  [[rx + 70, ky + 66], [rx + 112, ky + 112]].forEach(([cx, cy]) => {
+    if (cy > ky + half - 50) return;
+    el('circle', {cx, cy, r: 14, fill: '#cfa874', stroke: '#b38c58'}, kit);
+    el('circle', {cx: cx - 22, cy, r: 7, fill: '#9aa08f'}, kit); el('circle', {cx: cx + 22, cy, r: 7, fill: '#9aa08f'}, kit);
+  });
+  roomLabel(kit, rx + (side - 30) / 2, ky + half - 32, 'The Watercooler', 'Tap to chat with everyone');
+  if (office.wcUnread) {
+    el('circle', {cx: rx + 46, cy: ky + 16, r: 10, fill: '#c46a4a', stroke: '#fff', 'stroke-width': 2}, kit);
+    txt(kit, rx + 46, ky + 20, String(Math.min(99, office.wcUnread)), {'font-size': 10, 'font-weight': 800, fill: '#fff'});
+  }
+  el('rect', {class: 'hl', x: rx + 3, y: ky + 3, width: side - 6, height: half - 6, rx: 4}, kit);
+  makeClickable(kit, 'The Watercooler, group chat', openWatercooler);
+
+  // lobby / entrance
+  const lx = M + 2 * bw;
+  const lobby = el('g', {}, svg);
+  el('rect', {x: lx, y: yBot, width: bw, height: band, fill: 'url(#tile)'}, lobby);
+  el('rect', {x: lx + 26, y: yBot + 30, width: bw - 52, height: 24, rx: 12, fill: '#cfa874', stroke: '#b38c58'}, lobby);
+  plant(lobby, lx + 18, yBot + band - 26, 11); plant(lobby, lx + bw - 18, yBot + band - 26, 11);
+  el('rect', {x: lx + bw / 2 - 34, y: yBot + band - 30, width: 68, height: 16, rx: 3, fill: '#d6cbb2'}, lobby);
+  txt(lobby, lx + bw / 2, yBot + 86, 'Welcome to', {'font-size': 9.5, fill: '#6b7262'});
+  txt(lobby, lx + bw / 2, yBot + 104, 'The Bookkeeping Foundry', {'font-size': 12, 'font-family': 'Georgia, serif', fill: '#2b3326'});
+
+  // cubicles in the center
+  let n = 1;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const px = x0 + aisleX + c * (pod + aisleX), py = yTop + aisleY + r * (pod + aisleY);
+      const order = [[0, 0, 'down'], [S, 0, 'down'], [0, S, 'up'], [S, S, 'up']];
+      order.forEach(([dx, dy, f]) => { drawCubicle(svg, px + dx, py + dy, S, n, desks.get(n), f); n++; });
+      // partitions
+      el('rect', {x: px, y: py, width: pod, height: pod, fill: 'none', stroke: '#9aa08f', 'stroke-width': 0}, svg);
+      el('line', {x1: px, y1: py + S, x2: px + pod, y2: py + S, stroke: '#9aa08f', 'stroke-width': 6, 'stroke-linecap': 'round'}, svg);
+      el('line', {x1: px + S, y1: py + 6, x2: px + S, y2: py + pod - 6, stroke: '#9aa08f', 'stroke-width': 4, 'stroke-linecap': 'round'}, svg);
+      el('line', {x1: px, y1: py + 6, x2: px, y2: py + pod - 6, stroke: '#9aa08f', 'stroke-width': 4, 'stroke-linecap': 'round'}, svg);
+      el('line', {x1: px + pod, y1: py + 6, x2: px + pod, y2: py + pod - 6, stroke: '#9aa08f', 'stroke-width': 4, 'stroke-linecap': 'round'}, svg);
+    }
+  }
+  // plants in the open area
+  plant(svg, x0 + 16, yTop + 18, 10); plant(svg, x1 - 16, yTop + 18, 10);
+  plant(svg, x0 + 16, yBot - 18, 10); plant(svg, x1 - 16, yBot - 18, 10);
+
+  // interior walls
+  const wall = {stroke: '#5a6152', 'stroke-width': 6, 'stroke-linecap': 'square'};
+  el('line', Object.assign({x1: M, y1: yTop, x2: W - M, y2: yTop}, wall), svg);
+  el('line', Object.assign({x1: M, y1: yBot, x2: W - M, y2: yBot}, wall), svg);
+  for (let i = 1; i < 5; i++) { el('line', Object.assign({x1: M + i * bw, y1: M, x2: M + i * bw, y2: yTop}, wall), svg); el('line', Object.assign({x1: M + i * bw, y1: yBot, x2: M + i * bw, y2: H - M}, wall), svg); }
+  el('line', Object.assign({x1: x0, y1: yTop, x2: x0, y2: yBot}, wall), svg);
+  el('line', Object.assign({x1: x1, y1: yTop, x2: x1, y2: yBot}, wall), svg);
+  el('line', Object.assign({x1: M, y1: yTop + half, x2: x0, y2: yTop + half}, wall), svg);
+  el('line', Object.assign({x1: x1, y1: yTop + half, x2: W - M, y2: yTop + half}, wall), svg);
+  // doors
+  for (let i = 0; i < 5; i++) door(svg, M + (i + 1) * bw - 50, yTop, 36, 'h', -1);
+  [0, 1, 3, 4].forEach(i => door(svg, M + (i + 1) * bw - 50, yBot, 36, 'h', 1));
+  el('line', {x1: lx + 20, y1: yBot, x2: lx + bw - 20, y2: yBot, stroke: '#f6f3ea', 'stroke-width': 8}, svg);
+  door(svg, x0, yTop + half + 24, 36, 'v', -1);
+  el('line', {x1: x0, y1: yTop + half / 2 - 26, x2: x0, y2: yTop + half / 2 + 26, stroke: '#f6f3ea', 'stroke-width': 8}, svg);
+  el('line', {x1: x1, y1: yTop + half / 2 - 22, x2: x1, y2: yTop + half / 2 + 22, stroke: '#f6f3ea', 'stroke-width': 8}, svg);
+  el('line', {x1: x1, y1: yTop + half + 24, x2: x1, y2: yBot - 24, stroke: '#f6f3ea', 'stroke-width': 8}, svg);
+
+  // exterior walls with windows and the front entrance
+  el('rect', {x: M, y: M, width: W - 2 * M, height: H - 2 * M, fill: 'none', stroke: '#3d4337', 'stroke-width': 12}, svg);
+  const win = {stroke: '#bcd9e6', 'stroke-width': 5};
+  for (let i = 0; i < 5; i++) el('line', Object.assign({x1: M + i * bw + 34, y1: M, x2: M + (i + 1) * bw - 34, y2: M}, win), svg);
+  [0, 1, 3, 4].forEach(i => el('line', Object.assign({x1: M + i * bw + 34, y1: H - M, x2: M + (i + 1) * bw - 34, y2: H - M}, win), svg));
+  for (let y = yTop + 40; y < yBot - 40; y += 110) { el('line', Object.assign({x1: M, y1: y, x2: M, y2: Math.min(y + 60, yBot - 30)}, win), svg); el('line', Object.assign({x1: W - M, y1: y, x2: W - M, y2: Math.min(y + 60, yBot - 30)}, win), svg); }
+  el('line', {x1: lx + bw / 2 - 30, y1: H - M, x2: lx + bw / 2 + 30, y2: H - M, stroke: '#f6f3ea', 'stroke-width': 14}, svg);
+  el('path', {d: 'M' + (lx + bw / 2 - 30) + ' ' + (H - M) + ' A30 30 0 0 1 ' + (lx + bw / 2) + ' ' + (H - M - 30), fill: 'none', stroke: '#8b9184', 'stroke-dasharray': '3 3'}, svg);
+  el('path', {d: 'M' + (lx + bw / 2 + 30) + ' ' + (H - M) + ' A30 30 0 0 0 ' + (lx + bw / 2) + ' ' + (H - M - 30), fill: 'none', stroke: '#8b9184', 'stroke-dasharray': '3 3'}, svg);
+  txt(svg, lx + bw / 2, H - 2, 'ENTRANCE', {'font-size': 9, 'font-weight': 700, 'letter-spacing': 2, fill: '#6b7262'});
+
+  // move seats and rooms above walls so their outlines show on hover
+  svg.querySelectorAll('.hl').forEach(h => h.parentNode.appendChild(h));
+  plan.appendChild(svg);
 }
+
+const officeLinks = {lounge: null, meeting: null};
+function openLink(url) { if (url) window.open(url, '_blank', 'noopener'); }
 
 function fmtWhen(ts) {
   const d = new Date(ts), now = new Date();
@@ -1570,7 +1782,7 @@ function openDM(id) {
 
 function openWatercooler() {
   office.open = {type: 'wc'};
-  office.wcUnread = 0; officeEls.wcBadge.hidden = true;
+  office.wcUnread = 0; officeEls.wcBadge.hidden = true; drawFloor([...office.people.values()]);
   const online = [...office.people.values()].filter(p => p.online).length;
   showPanel('The Watercooler', online + (online === 1 ? ' person' : ' people') + ' in the office now', true);
   officeEls.input.placeholder = 'Say something to everyone…';
@@ -1600,7 +1812,7 @@ function subscribeOffice() {
       if (inOpen && !officeEls.panel.hidden) { addMessage(m); return; }
       if (m.sender_id === office.me) return;
       if (m.room === 'dm' && m.recipient_id === office.me) { office.unread.add(m.sender_id); drawFloor([...office.people.values()]); }
-      if (m.room === 'watercooler') { office.wcUnread++; officeEls.wcBadge.textContent = office.wcUnread; officeEls.wcBadge.hidden = false; }
+      if (m.room === 'watercooler') { office.wcUnread++; officeEls.wcBadge.textContent = office.wcUnread; officeEls.wcBadge.hidden = false; drawFloor([...office.people.values()]); }
     })
     .subscribe();
 }
@@ -1634,7 +1846,7 @@ officeEls.profile.addEventListener('submit', async e => {
   await refreshFloor();
   officeEls.panel.hidden = true; office.open = null;
   document.querySelector('#office').scrollIntoView({behavior: 'smooth', block: 'start'});
-  const desk = document.querySelector('.seat.me');
+  const desk = document.querySelector('.plan-seat.me');
   if (desk) { desk.classList.add('just-saved'); setTimeout(() => desk.classList.remove('just-saved'), 2500); }
   showOfficeToast('Saved! Your desk is updated.');
 });
