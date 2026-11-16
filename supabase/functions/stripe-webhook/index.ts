@@ -61,20 +61,23 @@ async function syncSubscription(sub: Stripe.Subscription, userId?: string | null
     stripe_subscription_id: sub.id,
     current_period_end: periodEnd(sub),
   };
-  if (await isFounder(sub)) row.is_founding_member = true;
+  row.is_founding_member = await isFounder(sub);
 
   // The checkout function stamps the member id on the subscription itself.
   if (!userId) userId = await knownUser(sub.metadata?.user_id);
 
   if (userId) {
-    const { data: existing } = await admin.from("memberships").select("id,stripe_subscription_id").eq("user_id", userId).maybeSingle();
+    const { data: existing } = await admin.from("memberships").select("id,stripe_subscription_id,is_comped").eq("user_id", userId).maybeSingle();
+    // Complimentary accounts are set by the owner; Stripe never changes them.
+    if (existing?.is_comped) { console.log("Skipping comped member", userId); return; }
     // Ignore late events from an older subscription once the member has a newer one.
     if (existing?.stripe_subscription_id && existing.stripe_subscription_id !== sub.id && row.status === "canceled") return;
     if (existing) await admin.from("memberships").update(row).eq("user_id", userId);
     else await admin.from("memberships").insert({ user_id: userId, ...row });
     return;
   }
-  const { data: bySub } = await admin.from("memberships").select("id").eq("stripe_subscription_id", sub.id).maybeSingle();
+  const { data: bySub } = await admin.from("memberships").select("id,is_comped").eq("stripe_subscription_id", sub.id).maybeSingle();
+  if (bySub?.is_comped) return;
   if (bySub) await admin.from("memberships").update(row).eq("id", bySub.id);
   else console.error("Subscription not linked to a member yet", sub.id);
 }

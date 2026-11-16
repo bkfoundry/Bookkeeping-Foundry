@@ -49,8 +49,8 @@ Deno.serve(async (req) => {
   }
 
   const { data: existing } = await admin.from("memberships")
-    .select("plan,status,stripe_customer_id,stripe_subscription_id").eq("user_id", user.id).maybeSingle();
-  if (existing?.status === "active" && existing.stripe_subscription_id) {
+    .select("plan,status,stripe_customer_id,stripe_subscription_id,is_comped").eq("user_id", user.id).maybeSingle();
+  if (existing?.status === "active" && (existing.stripe_subscription_id || existing.is_comped)) {
     return reply({ error: "already_member", plan: existing.plan }, 409);
   }
 
