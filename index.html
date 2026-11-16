@@ -591,7 +591,7 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
     <span class="eyebrow">MEMBER ACCESS</span>
     <h2>Welcome to the Foundry.</h2>
     <p id="memberGreeting"></p>
-    <p>Your account is active. You have full access to our interactive pricing generator, lead vault, and daily virtual coworking links below.</p>
+    <p id="membershipDetails" role="status">Checking your membership…</p>
     <div style="margin-top: 20px;">
       <button id="memberSignOut" type="button" class="button">Sign out</button>
     </div>
@@ -1109,18 +1109,55 @@ function closeAuth() {
   authMessage.hidden=true;
 }
 
-function renderSession(session) {
+let membershipRequest = 0;
+const membershipDetails = document.querySelector('#membershipDetails');
+const planLabels = {workspace:'Workspace', starter:'Starter', pro:'Pro', growth:'Growth'};
+
+async function renderSession(session) {
+  const requestId = ++membershipRequest;
   const user = session?.user;
   memberArea.hidden = !user;
   accessButton.textContent = user ? 'My account' : 'Member login';
-  if(user) memberGreeting.textContent = 'Signed in as ' + (user.email || 'a Foundry member') + '.';
+  if (!user) {
+    memberGreeting.textContent = '';
+    membershipDetails.textContent = '';
+    return;
+  }
+  memberGreeting.textContent = 'Signed in as ' + (user.email || 'a Foundry member') + '.';
+  membershipDetails.textContent = 'Checking your membership…';
+  if (!supabaseClient) {
+    membershipDetails.textContent = 'Membership information is temporarily unavailable.';
+    return;
+  }
+  try {
+    const {data, error} = await supabaseClient
+      .from('memberships')
+      .select('plan,status,is_founding_member')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (requestId !== membershipRequest) return;
+    if (error) throw error;
+    if (!data) {
+      membershipDetails.textContent = 'No membership assigned yet. Your account is registered, but paid access is not active.';
+      return;
+    }
+    const plan = planLabels[data.plan] || data.plan || 'Unknown';
+    const status = data.status || 'unknown';
+    const founder = data.is_founding_member ? ' · Founding member' : '';
+    membershipDetails.textContent = 'Membership: ' + plan + ' · Status: ' + status + founder +
+      (status === 'active' ? ' · Membership record verified.' : ' · Premium access is not active.');
+  } catch (error) {
+    if (requestId !== membershipRequest) return;
+    console.error('Membership lookup failed:', error);
+    membershipDetails.textContent = 'Unable to verify membership right now. Please try again later.';
+  }
 }
 
 accessButton.addEventListener('click', async () => {
   if(supabaseClient) {
     const {data} = await supabaseClient.auth.getSession();
     if(data.session) {
-      memberArea.hidden = false;
+      await renderSession(data.session);
       memberArea.scrollIntoView({behavior:'smooth'});
       return;
     }
