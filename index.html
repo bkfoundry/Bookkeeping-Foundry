@@ -656,6 +656,11 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
 .office-panel-error { font-size: 12px; color: #a84a30; padding: 0 22px 12px; margin: 0; min-height: 0; }
 @media(max-width: 1000px) { .office-floor { grid-template-columns: 1fr; } .office-desks { grid-template-columns: repeat(4, 1fr); } .office-rooms { grid-template-columns: repeat(3, 1fr); } }
 
+.office-toast { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px); background: var(--olive); color: #fff; padding: 12px 20px; border-radius: 999px; font-size: 14px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,.18); opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 120; }
+.office-toast.show { opacity: 1; transform: translate(-50%, 0); }
+.desk.just-saved { animation: deskPulse 1.2s ease 2; }
+@keyframes deskPulse { 0%,100% { box-shadow: inset 0 0 0 1px var(--olive); } 50% { box-shadow: 0 0 0 6px rgba(57,74,49,.25); } }
+
 .member-area { max-width: 850px; margin: 45px auto; padding: 45px 7%; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; }
 
 @media(max-width: 1100px) {
@@ -1025,8 +1030,8 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
       <label class="ft-field">Your name (as members will see it)<input id="profName" type="text" maxlength="60" required></label>
       <label class="ft-field">Business or title<input id="profHeadline" type="text" maxlength="80" placeholder="Meadows Bookkeeping · Cleanups & sales tax"></label>
       <label class="ft-field">Status<input id="profStatus" type="text" maxlength="80" placeholder="Heads down on month-end"></label>
-      <button type="submit" class="button">Save My Desk</button>
       <p class="ft-status" id="profMessage" role="status" style="color:var(--muted)"></p>
+      <button type="submit" class="button" id="profSave">Save My Desk</button>
     </form>
     <p class="office-panel-error" id="officeError" role="status"></p>
   </aside>
@@ -1563,16 +1568,27 @@ officeEls.input.addEventListener('keydown', e => {
 officeEls.profile.addEventListener('submit', async e => {
   e.preventDefault();
   const msg = document.querySelector('#profMessage');
+  msg.style.color = '';
   const display_name = document.querySelector('#profName').value.trim();
   if (!display_name) { msg.textContent = 'Please add your name.'; return; }
   const {error} = await supabaseClient.from('office_profiles').update({
     display_name, headline: document.querySelector('#profHeadline').value.trim() || null,
     status_text: document.querySelector('#profStatus').value.trim() || null
   }).eq('user_id', office.me);
-  if (error) { msg.textContent = 'That didn\'t save. Please try again.'; return; }
-  msg.textContent = 'Saved. Your desk is updated.';
+  if (error) { msg.textContent = 'That didn\'t save. Please try again.'; msg.style.color = '#a84a30'; return; }
   await refreshFloor();
+  officeEls.panel.hidden = true; office.open = null;
+  document.querySelector('#office').scrollIntoView({behavior: 'smooth', block: 'start'});
+  const desk = document.querySelector('.desk.me');
+  if (desk) { desk.classList.add('just-saved'); setTimeout(() => desk.classList.remove('just-saved'), 2500); }
+  showOfficeToast('Saved! Your desk is updated.');
 });
+function showOfficeToast(text) {
+  let t = document.querySelector('#officeToast');
+  if (!t) { t = document.createElement('div'); t.id = 'officeToast'; t.className = 'office-toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+  t.textContent = text; t.classList.add('show');
+  clearTimeout(t._timer); t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
 document.querySelector('#officePanelClose').addEventListener('click', () => {
   officeEls.panel.hidden = true; office.open = null; clearInterval(office.poll); office.poll = null;
 });
