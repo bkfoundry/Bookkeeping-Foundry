@@ -930,7 +930,7 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
             <input type="text" id="coupon-ws" placeholder="Discount Code">
             <button type="button" class="coupon-btn" onclick="applyCoupon('ws')">Apply</button>
           </div>
-          <a class="plan-button" href="mailto:hello@bkfoundry.com?subject=Foundry%20Workspace%20Interest">Join Workspace →</a>
+          <a class="plan-button" data-plan="workspace" href="mailto:hello@bkfoundry.com?subject=Foundry%20Workspace%20Interest">Join Workspace →</a>
         </div>
       </article>
 
@@ -957,7 +957,7 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
             <input type="text" id="coupon-mb" placeholder="Discount Code">
             <button type="button" class="coupon-btn" onclick="applyCoupon('mb')">Apply</button>
           </div>
-          <a class="plan-button" href="mailto:hello@bkfoundry.com?subject=Foundry%20Membership%20Interest">Join Membership →</a>
+          <a class="plan-button" data-plan="membership" href="mailto:hello@bkfoundry.com?subject=Foundry%20Membership%20Interest">Join Membership →</a>
         </div>
       </article>
 
@@ -976,7 +976,8 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
           <li>Priority Lead & Client Referral Placement</li>
         </ul>
         <div class="coupon-box">
-          <a class="plan-button" style="margin-top:25px;" href="mailto:hello@bkfoundry.com?subject=Growth%20Cohort%20Application">Apply for Seat →</a>
+          <a class="plan-button" data-plan="growth" style="margin-top:25px;" href="mailto:hello@bkfoundry.com?subject=Growth%20Seat%20Application">Apply for Seat →</a>
+          <p class="plan-note" style="font-size:12px;color:var(--muted);margin-top:10px;">Approved? Log in and tap Apply for Seat to finish signing up.</p>
         </div>
       </article>
 
@@ -994,7 +995,7 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
           <li>Alumni Networking & Joint Ventures</li>
         </ul>
         <div class="coupon-box">
-          <a class="plan-button" style="margin-top:25px;" href="mailto:hello@bkfoundry.com?subject=Alumni%20Pass%20Interest">Get Alumni Pass →</a>
+          <a class="plan-button" data-plan="alumni" style="margin-top:25px;" href="mailto:hello@bkfoundry.com?subject=Alumni%20Pass%20Interest">Get Alumni Pass →</a>
         </div>
       </article>
     </div>
@@ -1181,28 +1182,23 @@ if(goal && fee) {
 // Year Footer
 document.querySelector('#year').textContent = new Date().getFullYear();
 
-// Discount Coupon Code Functionality
+// Founding-member codes. The real discount is applied by Stripe at checkout;
+// this only previews the price and remembers the code for the Join button.
+const appliedCodes = {};
 function applyCoupon(type) {
-  if(type === 'ws') {
-    const code = document.getElementById('coupon-ws').value.trim().toUpperCase();
-    if(code === 'FOUNDER19') {
-      document.getElementById('price-ws-strike').style.display = 'inline';
-      document.getElementById('price-ws').textContent = '$19';
-      document.getElementById('badge-ws').style.display = 'inline-block';
-      alert('Code FOUNDER19 Applied! Your rate is now $19/mo.');
-    } else {
-      alert('Invalid code. Try FOUNDER19');
-    }
-  } else if(type === 'mb') {
-    const code = document.getElementById('coupon-mb').value.trim().toUpperCase();
-    if(code === 'FOUNDER49') {
-      document.getElementById('price-mb-strike').style.display = 'inline';
-      document.getElementById('price-mb').textContent = '$49';
-      document.getElementById('badge-mb').style.display = 'inline-block';
-      alert('Code FOUNDER49 Applied! Your rate is now $49/mo.');
-    } else {
-      alert('Invalid code. Try FOUNDER49');
-    }
+  const plan = type === 'ws' ? 'workspace' : 'membership';
+  const expected = type === 'ws' ? 'FOUNDER19' : 'FOUNDER49';
+  const price = type === 'ws' ? '$19' : '$49';
+  const code = document.getElementById('coupon-' + type).value.trim().toUpperCase();
+  if (code === expected) {
+    appliedCodes[plan] = code;
+    document.getElementById('price-' + type + '-strike').style.display = 'inline';
+    document.getElementById('price-' + type).textContent = price;
+    document.getElementById('badge-' + type).style.display = 'inline-block';
+    alert('Code ' + code + ' applied! Your rate is ' + price + '/mo for as long as you stay a member.');
+  } else {
+    delete appliedCodes[plan];
+    alert('That code isn\'t valid for this plan.');
   }
 }
 
@@ -1946,7 +1942,7 @@ authForm.addEventListener('submit', async (e) => {
   
   try {
     if(authMode === 'signup') {
-      const {data, error} = await supabaseClient.auth.signUp({email, password});
+      const {data, error} = await supabaseClient.auth.signUp({email, password, options: {emailRedirectTo: location.origin + location.pathname}});
       if(error) throw error;
       if(data.session) { closeAuth(); renderSession(data.session); }
       else { showAuthMessage('Confirmation email sent! Please check your inbox.'); }
@@ -1969,9 +1965,102 @@ document.querySelector('#memberSignOut').addEventListener('click', async () => {
   renderSession(null);
 });
 
+
+// Stripe checkout. Members create an account first, then pay; the payment
+// webhook switches their plan on as soon as Stripe confirms it.
+const PENDING_KEY = 'foundryPendingPlan';
+function savePending(v) { try { v ? localStorage.setItem(PENDING_KEY, JSON.stringify(v)) : localStorage.removeItem(PENDING_KEY); } catch (e) {} }
+function readPending() { try { return JSON.parse(localStorage.getItem(PENDING_KEY) || 'null'); } catch (e) { return null; } }
+let checkoutBusy = false;
+
+async function startCheckout(plan, button) {
+  if (!supabaseClient || checkoutBusy) return false;
+  const {data} = await supabaseClient.auth.getSession();
+  const session = data.session;
+  if (!session) {
+    savePending({plan, code: appliedCodes[plan] || '', at: Date.now()});
+    openAuth('signup');
+    showAuthMessage(plan === 'growth'
+      ? 'Growth is by application. If you\'ve been approved, log in (or create your account with the email you applied with) to finish.'
+      : 'Create your Foundry account (or log in), and we\'ll take you straight to secure checkout.');
+    return true;
+  }
+  checkoutBusy = true;
+  const label = button ? button.textContent : '';
+  if (button) button.textContent = 'Opening checkout…';
+  try {
+    const res = await fetch(SUPABASE_URL + '/functions/v1/create-checkout', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token, 'apikey': SUPABASE_PUBLISHABLE_KEY},
+      body: JSON.stringify({plan, code: appliedCodes[plan] || '', return_url: location.origin + location.pathname})
+    });
+    const out = await res.json().catch(() => ({}));
+    if (out.url) { savePending(null); location.href = out.url; return true; }
+    savePending(null);
+    const msgs = {
+      not_approved: 'Growth seats are by application. We\'ll open an email so you can apply.',
+      already_member: 'You already have an active membership. Email hello@bkfoundry.com to change plans.',
+      bad_code: 'That discount code isn\'t active. You can still enter a code on the checkout page.',
+      code_not_for_plan: 'That code doesn\'t apply to this plan.',
+      not_configured: 'Checkout is being set up. Please try again soon or email hello@bkfoundry.com.'
+    };
+    alert(msgs[out.error] || 'We couldn\'t open checkout. Please try again, or email hello@bkfoundry.com.');
+    if (out.error === 'not_approved' && button) location.href = button.getAttribute('href');
+  } catch (e) {
+    console.error('Checkout error', e);
+    alert('We couldn\'t open checkout. Please try again, or email hello@bkfoundry.com.');
+  } finally {
+    checkoutBusy = false;
+    if (button) button.textContent = label;
+  }
+  return true;
+}
+
+document.querySelectorAll('.plan-button[data-plan]').forEach(btn => {
+  btn.addEventListener('click', async (e) => {
+    if (!supabaseClient) return; // falls back to the email link
+    e.preventDefault();
+    await startCheckout(btn.dataset.plan, btn);
+  });
+});
+
+function resumePendingCheckout(session) {
+  const pending = readPending();
+  if (!session || !pending) return;
+  if (Date.now() - (pending.at || 0) > 86400000) { savePending(null); return; }
+  if (pending.code) appliedCodes[pending.plan] = pending.code;
+  savePending(null);
+  startCheckout(pending.plan, document.querySelector('.plan-button[data-plan="' + pending.plan + '"]'));
+}
+
+// Back from Stripe: the webhook can take a few seconds, so re-check a few times.
+(function handleCheckoutReturn() {
+  const params = new URLSearchParams(location.search);
+  const result = params.get('checkout');
+  if (!result) return;
+  history.replaceState(null, '', location.pathname + location.hash);
+  if (result === 'canceled') return;
+  if (!supabaseClient) return;
+  let tries = 0;
+  const check = async () => {
+    const {data} = await supabaseClient.auth.getSession();
+    if (!data.session) return;
+    const {data: m} = await supabaseClient.from('memberships').select('status').eq('user_id', data.session.user.id).maybeSingle();
+    await renderSession(data.session);
+    if (m?.status === 'active') { memberArea.scrollIntoView({behavior:'smooth'}); return; }
+    if (++tries < 8) setTimeout(check, 2500);
+    else membershipDetails.textContent = 'Payment received. Your access is still switching on; refresh in a minute, or email hello@bkfoundry.com.';
+  };
+  membershipDetails.textContent = 'Payment received! Switching on your membership…';
+  setTimeout(check, 1500);
+})();
+
 if(supabaseClient) {
   supabaseClient.auth.getSession().then(({data}) => { if(data.session) renderSession(data.session); });
-  supabaseClient.auth.onAuthStateChange((_event, session) => renderSession(session));
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    renderSession(session);
+    if (event === 'SIGNED_IN') resumePendingCheckout(session);
+  });
 }
 </script>
 </body>
