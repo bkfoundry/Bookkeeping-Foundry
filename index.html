@@ -930,7 +930,7 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
             <input type="text" id="coupon-ws" placeholder="Discount Code">
             <button type="button" class="coupon-btn" onclick="applyCoupon('ws')">Apply</button>
           </div>
-          <a class="plan-button" data-plan="workspace" href="mailto:hello@bkfoundry.com?subject=Foundry%20Workspace%20Interest">Join Workspace →</a>
+          <a class="plan-button" data-plan="workspace" href="mailto:shirley@pbsbackoffice.com?subject=Foundry%20Workspace%20Interest">Join Workspace →</a>
         </div>
       </article>
 
@@ -957,7 +957,7 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
             <input type="text" id="coupon-mb" placeholder="Discount Code">
             <button type="button" class="coupon-btn" onclick="applyCoupon('mb')">Apply</button>
           </div>
-          <a class="plan-button" data-plan="membership" href="mailto:hello@bkfoundry.com?subject=Foundry%20Membership%20Interest">Join Membership →</a>
+          <a class="plan-button" data-plan="membership" href="mailto:shirley@pbsbackoffice.com?subject=Foundry%20Membership%20Interest">Join Membership →</a>
         </div>
       </article>
 
@@ -976,7 +976,7 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
           <li>Priority Lead & Client Referral Placement</li>
         </ul>
         <div class="coupon-box">
-          <a class="plan-button" data-plan="growth" style="margin-top:25px;" href="mailto:hello@bkfoundry.com?subject=Growth%20Seat%20Application">Apply for Seat →</a>
+          <a class="plan-button" data-plan="growth" style="margin-top:25px;" href="mailto:shirley@pbsbackoffice.com?subject=Growth%20Seat%20Application">Apply for Seat →</a>
           <p class="plan-note" style="font-size:12px;color:var(--muted);margin-top:10px;">Approved? Log in and tap Apply for Seat to finish signing up.</p>
         </div>
       </article>
@@ -995,7 +995,7 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
           <li>Alumni Networking & Joint Ventures</li>
         </ul>
         <div class="coupon-box">
-          <a class="plan-button" data-plan="alumni" style="margin-top:25px;" href="mailto:hello@bkfoundry.com?subject=Alumni%20Pass%20Interest">Get Alumni Pass →</a>
+          <a class="plan-button" data-plan="alumni" style="margin-top:25px;" href="mailto:shirley@pbsbackoffice.com?subject=Alumni%20Pass%20Interest">Get Alumni Pass →</a>
         </div>
       </article>
     </div>
@@ -1123,7 +1123,7 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
     <span class="eyebrow light">YOUR BUSINESS. YOUR FUTURE.</span>
     <h2>Build something that's <em>yours.</em></h2>
     <p>And find a community that makes the journey a little less lonely.</p>
-    <a class="button light-button" href="mailto:hello@bkfoundry.com?subject=Bookkeeping%20Foundry%20Early%20Access">Ask about early access →</a>
+    <a class="button light-button" href="mailto:shirley@pbsbackoffice.com?subject=Bookkeeping%20Foundry%20Early%20Access">Ask about early access →</a>
   </section>
 
 </main>
@@ -1336,7 +1336,7 @@ async function renderPremium(membership) {
     if (requestId !== premiumRequest) return;
     if (error) throw error;
     if (!data || !data.length) {
-      showLocked('We couldn\'t load your tools. Please refresh, or email hello@bkfoundry.com.', 'View Membership Plans');
+      showLocked('We couldn\'t load your tools. Please refresh, or email shirley@pbsbackoffice.com.', 'View Membership Plans');
       return;
     }
     const byId = new Map(data.map(item => [item.id, item]));
@@ -1999,16 +1999,16 @@ async function startCheckout(plan, button) {
     savePending(null);
     const msgs = {
       not_approved: 'Growth seats are by application. We\'ll open an email so you can apply.',
-      already_member: 'You already have an active membership. Email hello@bkfoundry.com to change plans.',
+      already_member: 'You already have an active membership. Email shirley@pbsbackoffice.com to change plans.',
       bad_code: 'That discount code isn\'t active. You can still enter a code on the checkout page.',
       code_not_for_plan: 'That code doesn\'t apply to this plan.',
-      not_configured: 'Checkout is being set up. Please try again soon or email hello@bkfoundry.com.'
+      not_configured: 'Checkout is being set up. Please try again soon or email shirley@pbsbackoffice.com.'
     };
-    alert(msgs[out.error] || 'We couldn\'t open checkout. Please try again, or email hello@bkfoundry.com.');
+    alert(msgs[out.error] || 'We couldn\'t open checkout. Please try again, or email shirley@pbsbackoffice.com.');
     if (out.error === 'not_approved' && button) location.href = button.getAttribute('href');
   } catch (e) {
     console.error('Checkout error', e);
-    alert('We couldn\'t open checkout. Please try again, or email hello@bkfoundry.com.');
+    alert('We couldn\'t open checkout. Please try again, or email shirley@pbsbackoffice.com.');
   } finally {
     checkoutBusy = false;
     if (button) button.textContent = label;
@@ -2049,7 +2049,7 @@ function resumePendingCheckout(session) {
     await renderSession(data.session);
     if (m?.status === 'active') { memberArea.scrollIntoView({behavior:'smooth'}); return; }
     if (++tries < 8) setTimeout(check, 2500);
-    else membershipDetails.textContent = 'Payment received. Your access is still switching on; refresh in a minute, or email hello@bkfoundry.com.';
+    else membershipDetails.textContent = 'Payment received. Your access is still switching on; refresh in a minute, or email shirley@pbsbackoffice.com.';
   };
   membershipDetails.textContent = 'Payment received! Switching on your membership…';
   setTimeout(check, 1500);
