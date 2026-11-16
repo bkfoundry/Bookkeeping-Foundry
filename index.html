@@ -540,6 +540,18 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
 .auth-message { margin: 15px 0 0; padding: 12px; background: #edf3e9; border-left: 3px solid var(--olive); font-size: 12px; line-height: 1.6; }
 .auth-message.error { background: #fff0e9; border-color: #a84a30; }
 
+/* Locked member tools */
+.locked-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 50px; }
+.locked-card { background: var(--paper); border: 1px dashed #c4cbb9; border-radius: 8px; padding: 30px; position: relative; }
+.locked-card h3 { font-family: Georgia, serif; font-size: 22px; font-weight: 500; margin: 10px 0; }
+.locked-card p { font-size: 13px; color: var(--muted); line-height: 1.7; margin: 0; }
+.lock-icon { position: absolute; top: 22px; right: 24px; font-size: 20px; opacity: .7; }
+.locked-cta { text-align: center; margin-top: 30px; }
+.locked-cta p { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+#premiumTools[hidden], #lockedTools[hidden], #lockedButton[hidden] { display: none !important; }
+.service-chip { font: inherit; font-size: 13px; color: inherit; text-align: left; }
+@media(max-width: 800px) { .locked-grid { grid-template-columns: 1fr; } .scope-grid { grid-template-columns: 1fr; } }
+
 .member-area { max-width: 850px; margin: 45px auto; padding: 45px 7%; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; }
 
 @media(max-width: 1100px) {
@@ -816,103 +828,40 @@ footer p { font-size: 12px; color: #788072; margin: 0; }
     </div>
   </section>
 
-  <!-- Member-Only Tools Section: Client Scope Pricing & Lead Vault -->
+  <!-- Member-Only Tools: content is delivered by Supabase only to eligible members -->
   <section class="section" id="tools">
     <div class="section-head">
       <span class="eyebrow">PRACTICAL MEMBER TOOLS</span>
       <h2>Master pricing & <em>client acquisition.</em></h2>
-      <p>Solve the two biggest hurdles when starting out with interactive calculators and crowdsourced lead channels.</p>
+      <p>Solve the two biggest hurdles when starting out: pricing your work and finding clients. Included with Starter, Pro and Growth memberships.</p>
     </div>
 
-    <!-- Interactive Client Scope & Proposal Generator -->
-    <div class="scope-tool">
-      <span class="eyebrow">TOOL 01 / CLIENT PRICING CALCULATOR</span>
-      <h3 style="font-family: Georgia, serif; font-size: 28px; margin: 10px 0;">Build a Custom Client Proposal</h3>
-      <p style="color: var(--muted); font-size: 14px;">Select the services your prospective client needs to automatically calculate a flat monthly retainer and cleanup fee.</p>
-
-      <div class="scope-grid">
-        <div>
-          <label style="font-weight: 700; font-size: 13px; display: block; margin-bottom: 12px;">Select Required Services:</label>
-          <div class="services-list">
-            <div class="service-chip active" onclick="toggleService(this, 350)">
-              <input type="checkbox" checked hidden> Monthly Bookkeeping ($350)
-            </div>
-            <div class="service-chip" onclick="toggleService(this, 150)">
-              <input type="checkbox" hidden> Payroll Processing (+$150)
-            </div>
-            <div class="service-chip" onclick="toggleService(this, 125)">
-              <input type="checkbox" hidden> Accounts Payable (+$125)
-            </div>
-            <div class="service-chip" onclick="toggleService(this, 200)">
-              <input type="checkbox" hidden> Advisory & CFO Report (+$200)
-            </div>
-          </div>
-
-          <div style="margin-top: 25px;">
-            <label style="font-weight: 700; font-size: 13px; display: block; margin-bottom: 8px;">Monthly Transactions: <span id="tx-val" style="color:var(--olive);">125 tx/mo</span></label>
-            <input type="range" min="50" max="500" step="25" value="125" style="width:100%; accent-color:var(--olive);" oninput="updateScope()">
-          </div>
-
-          <div style="margin-top: 20px;">
-            <label style="font-weight: 700; font-size: 13px; display: block; margin-bottom: 8px;">Unreconciled Backlog (Months): <span id="cleanup-val" style="color:var(--olive);">2 months</span></label>
-            <input type="range" id="cleanup-range" min="0" max="12" step="1" value="2" style="width:100%; accent-color:var(--olive);" oninput="updateScope()">
-          </div>
-        </div>
-
-        <div class="proposal-box">
-          <h4>Recommended Scope Quote</h4>
-          <div style="font-size: 12px; color: var(--sage);">Flat Monthly Retainer:</div>
-          <div class="proposal-price" id="calc-retainer">$450/mo</div>
-          
-          <div style="font-size: 12px; color: var(--sage); margin-top: 15px;">One-Time Diagnostic Cleanup:</div>
-          <div style="font-size: 24px; font-family: Georgia, serif; color: var(--gold);" id="calc-cleanup">$700</div>
-
-          <div class="proposal-breakdown" id="calc-details">
-            Includes monthly reconciliation, financial statement delivery, and 2 backlog cleanup months.
-          </div>
-          <button type="button" class="button secondary small" onclick="alert('Proposal template copied to clipboard!')">Copy Proposal Script</button>
-        </div>
-      </div>
+    <div class="locked-grid" id="lockedTools">
+      <article class="locked-card">
+        <div class="lock-icon" aria-hidden="true">🔒</div>
+        <span class="eyebrow">TOOL 01</span>
+        <h3>Client Pricing Calculator</h3>
+        <p>Turn a client's services, transaction volume and backlog into a flat monthly retainer and cleanup fee.</p>
+      </article>
+      <article class="locked-card">
+        <div class="lock-icon" aria-hidden="true">🔒</div>
+        <span class="eyebrow">TOOL 02</span>
+        <h3>Proposal Generator</h3>
+        <p>Build a ready-to-send client proposal from your quote, then copy it into an email or document.</p>
+      </article>
+      <article class="locked-card">
+        <div class="lock-icon" aria-hidden="true">🔒</div>
+        <span class="eyebrow">TOOL 03</span>
+        <h3>Client Acquisition Hub</h3>
+        <p>Proven ways to find your first and next clients, from CPA referral partners to niche marketing.</p>
+      </article>
+    </div>
+    <div class="locked-cta">
+      <p id="lockedMessage">Members get full access to these tools.</p>
+      <a id="lockedButton" class="button" href="#pricing">View Membership Plans</a>
     </div>
 
-    <!-- Client Acquisition Hub & Lead Vault -->
-    <div class="lead-hub">
-      <span class="eyebrow">TOOL 02 / CLIENT ACQUISITION HUB</span>
-      <h3 style="font-family: Georgia, serif; font-size: 28px; margin: 10px 0;">"What's Working Now" Strategy Vault</h3>
-      <p style="color: var(--muted); font-size: 14px;">Real client-hunting tactics shared and vetted by members of the Bookkeeping Foundry community.</p>
-
-      <div class="tactics-grid">
-        <div class="tactic-card">
-          <span class="tactic-tag">HIGH SUCCESS RATE</span>
-          <h4>Local CPA Referral Partnerships</h4>
-          <p>"Reach out to local CPAs who don't offer monthly bookkeeping. Offer to clean up client books before tax season."</p>
-          <div class="tactic-meta">
-            <span>Difficulty: Medium</span>
-            <span>★ 4.9 / 5.0</span>
-          </div>
-        </div>
-
-        <div class="tactic-card">
-          <span class="tactic-tag">QUICKEST FIRST CLIENT</span>
-          <h4>Niche LinkedIn Optimization</h4>
-          <p>"Optimize headline to 'Bookkeeper for Trade Contractors'. Post 2 diagnostic tips weekly to attract inbound DMs."</p>
-          <div class="tactic-meta">
-            <span>Difficulty: Low</span>
-            <span>★ 4.7 / 5.0</span>
-          </div>
-        </div>
-
-        <div class="tactic-card">
-          <span class="tactic-tag">HIGH RETAINER</span>
-          <h4>B2B Local Chamber Pitching</h4>
-          <p>"Attend local networking meetings with a simple one-page Diagnostic Review offer instead of selling full bookkeeping."</p>
-          <div class="tactic-meta">
-            <span>Difficulty: Medium</span>
-            <span>★ 4.8 / 5.0</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div id="premiumTools" hidden></div>
   </section>
 
   <!-- FAQ Section -->
@@ -1030,37 +979,6 @@ function applyCoupon(type) {
   }
 }
 
-// Client Scope Proposal Calculator Logic
-function toggleService(el, val) {
-  el.classList.toggle('active');
-  updateScope();
-}
-
-function updateScope() {
-  let baseRetainer = 0;
-  const activeChips = document.querySelectorAll('.service-chip.active');
-  activeChips.forEach(chip => {
-    if(chip.textContent.includes('Monthly Bookkeeping')) baseRetainer += 350;
-    if(chip.textContent.includes('Payroll')) baseRetainer += 150;
-    if(chip.textContent.includes('Accounts Payable')) baseRetainer += 125;
-    if(chip.textContent.includes('Advisory')) baseRetainer += 200;
-  });
-
-  const txCount = document.querySelectorAll('input[type=range]')[2].value;
-  document.getElementById('tx-val').textContent = txCount + ' tx/mo';
-  
-  const cleanupMonths = document.getElementById('cleanup-range').value;
-  document.getElementById('cleanup-val').textContent = cleanupMonths + ' months';
-
-  const txMultiplier = Math.floor(txCount / 100) * 50;
-  const totalRetainer = baseRetainer + txMultiplier;
-  const totalCleanup = (totalRetainer * 0.8) * cleanupMonths;
-
-  document.getElementById('calc-retainer').textContent = '$' + totalRetainer + '/mo';
-  document.getElementById('calc-cleanup').textContent = '$' + totalCleanup;
-  document.getElementById('calc-details').textContent = 'Includes selected services, ' + txCount + ' transactions/mo, and ' + cleanupMonths + ' months backdated cleanup.';
-}
-
 // Supabase Authentication
 const SUPABASE_URL='https://dlknxjzrqaijitckrgle.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_e0FNfrLXv9_BeJnK5wSttw_mxEucdRW';
@@ -1109,6 +1027,76 @@ function closeAuth() {
   authMessage.hidden=true;
 }
 
+// Member-only tools. The tools are not in this file: Supabase sends them
+// only to logged-in members with an active Starter, Pro or Growth plan.
+const PLAN_RANK = {workspace: 0, starter: 1, pro: 2, growth: 3};
+const premiumTools = document.querySelector('#premiumTools');
+const lockedTools = document.querySelector('#lockedTools');
+const lockedMessage = document.querySelector('#lockedMessage');
+const lockedButton = document.querySelector('#lockedButton');
+let premiumRequest = 0;
+
+function showLocked(message, buttonText) {
+  premiumTools.replaceChildren();
+  premiumTools.hidden = true;
+  lockedTools.hidden = false;
+  lockedButton.hidden = false;
+  lockedMessage.textContent = message;
+  lockedButton.textContent = buttonText;
+}
+
+async function renderPremium(membership) {
+  const requestId = ++premiumRequest;
+  const active = membership && membership.status === 'active';
+  const rank = active ? (PLAN_RANK[membership.plan] ?? 0) : -1;
+  if (!membership) {
+    showLocked('Members get full access to these tools.', 'View Membership Plans');
+    return;
+  }
+  if (rank < 1) {
+    showLocked(membership.plan === 'workspace' && active
+      ? 'Your Workspace plan includes the community. Upgrade to Starter or higher to unlock these tools.'
+      : 'Your membership isn\'t active right now, so these tools are locked.',
+      membership.plan === 'workspace' && active ? 'Upgrade Your Membership' : 'View Membership Plans');
+    return;
+  }
+  lockedMessage.textContent = 'Loading your member tools…';
+  lockedButton.hidden = true;
+  try {
+    const {data, error} = await supabaseClient
+      .from('premium_content')
+      .select('id,html,script')
+      .order('sort_order');
+    if (requestId !== premiumRequest) return;
+    if (error) throw error;
+    if (!data || !data.length) {
+      showLocked('We couldn\'t load your tools. Please refresh, or email hello@bkfoundry.com.', 'View Membership Plans');
+      return;
+    }
+    premiumTools.replaceChildren();
+    for (const item of data) {
+      const box = document.createElement('div');
+      box.className = item.id === 'acquisition-hub' ? 'lead-hub' : 'scope-tool';
+      box.dataset.premium = item.id;
+      box.innerHTML = item.html;
+      premiumTools.appendChild(box);
+    }
+    lockedTools.hidden = true;
+    premiumTools.hidden = false;
+    lockedMessage.textContent = '';
+    for (const item of data) {
+      if (!item.script) continue;
+      const root = premiumTools.querySelector('[data-premium="' + item.id + '"]');
+      try { new Function('root', item.script)(root); }
+      catch (err) { console.error('Tool failed to start:', item.id, err); }
+    }
+  } catch (error) {
+    if (requestId !== premiumRequest) return;
+    console.error('Member tools failed to load:', error);
+    showLocked('We couldn\'t load your tools right now. Please try again later.', 'View Membership Plans');
+  }
+}
+
 let membershipRequest = 0;
 const membershipDetails = document.querySelector('#membershipDetails');
 const planLabels = {workspace:'Workspace', starter:'Starter', pro:'Pro', growth:'Growth'};
@@ -1121,6 +1109,7 @@ async function renderSession(session) {
   if (!user) {
     memberGreeting.textContent = '';
     membershipDetails.textContent = '';
+    renderPremium(null);
     return;
   }
   memberGreeting.textContent = 'Signed in as ' + (user.email || 'a Foundry member') + '.';
@@ -1139,6 +1128,7 @@ async function renderSession(session) {
     if (error) throw error;
     if (!data) {
       membershipDetails.textContent = 'No membership assigned yet. Your account is registered, but paid access is not active.';
+      renderPremium(null);
       return;
     }
     const plan = planLabels[data.plan] || data.plan || 'Unknown';
@@ -1146,9 +1136,11 @@ async function renderSession(session) {
     const founder = data.is_founding_member ? ' · Founding member' : '';
     membershipDetails.textContent = 'Membership: ' + plan + ' · Status: ' + status + founder +
       (status === 'active' ? ' · Membership record verified.' : ' · Premium access is not active.');
+    renderPremium(data);
   } catch (error) {
     if (requestId !== membershipRequest) return;
     console.error('Membership lookup failed:', error);
+    renderPremium(null);
     membershipDetails.textContent = 'Unable to verify membership right now. Please try again later.';
   }
 }
