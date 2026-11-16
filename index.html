@@ -1580,7 +1580,9 @@ function drawFloor(list) {
   const x0 = M + side, x1 = W - M - side, cw = x1 - x0;
   const aisleX = (cw - cols * pod) / (cols + 1), aisleY = 56;
   const centerH = rows * pod + (rows + 1) * aisleY;
-  const yTop = M + band, yBot = yTop + centerH, H = yBot + band + M;
+  // offices 11-15 sit in a second wing along the top when more than 10 are set
+  const wing = office.roomCount > 10 ? band + 40 : 0;
+  const yTop = M + wing + band, yBot = yTop + centerH, H = yBot + band + M;
   const plan = document.querySelector('#officePlan');
   plan.replaceChildren();
   const svg = el('svg', {viewBox: '0 0 ' + W + ' ' + H, role: 'img'});
@@ -1597,7 +1599,11 @@ function drawFloor(list) {
 
   // top offices 1-5
   const bw = (W - 2 * M) / 5;
-  for (let i = 0; i < 5; i++) drawRoom(svg, M + i * bw, M, bw, band, i + 1, rooms.get(i + 1), 'bottom');
+  for (let i = 0; i < 5; i++) drawRoom(svg, M + i * bw, M + wing, bw, band, i + 1, rooms.get(i + 1), 'bottom');
+  if (wing) {
+    for (let i = 0; i < 5; i++) drawRoom(svg, M + i * bw, M, bw, band, 11 + i, rooms.get(11 + i), 'bottom');
+    txt(svg, W / 2, M + band + 25, 'THE TEAM WING', {'font-size': 10, 'font-weight': 700, 'letter-spacing': 2, fill: '#6b7262'});
+  }
   // bottom offices 6,7,(lobby),8,9
   const bottomSlots = [6, 7, null, 8, 9];
   bottomSlots.forEach((no, i) => { if (no) drawRoom(svg, M + i * bw, yBot, bw, band, no, rooms.get(no), 'top'); });
@@ -1687,7 +1693,13 @@ function drawFloor(list) {
   const wall = {stroke: '#5a6152', 'stroke-width': 6, 'stroke-linecap': 'square'};
   el('line', Object.assign({x1: M, y1: yTop, x2: W - M, y2: yTop}, wall), svg);
   el('line', Object.assign({x1: M, y1: yBot, x2: W - M, y2: yBot}, wall), svg);
-  for (let i = 1; i < 5; i++) { el('line', Object.assign({x1: M + i * bw, y1: M, x2: M + i * bw, y2: yTop}, wall), svg); el('line', Object.assign({x1: M + i * bw, y1: yBot, x2: M + i * bw, y2: H - M}, wall), svg); }
+  if (wing) {
+    el('line', Object.assign({x1: M, y1: M + band, x2: W - M, y2: M + band}, wall), svg);
+    el('line', Object.assign({x1: M, y1: M + wing, x2: W - M, y2: M + wing}, wall), svg);
+    for (let i = 1; i < 5; i++) el('line', Object.assign({x1: M + i * bw, y1: M, x2: M + i * bw, y2: M + band}, wall), svg);
+    for (let i = 0; i < 5; i++) door(svg, M + (i + 1) * bw - 50, M + band, 36, 'h', -1);
+  }
+  for (let i = 1; i < 5; i++) { el('line', Object.assign({x1: M + i * bw, y1: M + wing, x2: M + i * bw, y2: yTop}, wall), svg); el('line', Object.assign({x1: M + i * bw, y1: yBot, x2: M + i * bw, y2: H - M}, wall), svg); }
   el('line', Object.assign({x1: x0, y1: yTop, x2: x0, y2: yBot}, wall), svg);
   el('line', Object.assign({x1: x1, y1: yTop, x2: x1, y2: yBot}, wall), svg);
   el('line', Object.assign({x1: M, y1: yTop + half, x2: x0, y2: yTop + half}, wall), svg);
